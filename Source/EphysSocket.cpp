@@ -47,8 +47,15 @@ void EphysSocket::resizeChanSamp()
     sourceBuffers[0]->resize(num_channels, 10000);
     recvbuf = (uint16_t *)realloc(recvbuf, num_channels * num_samp * 2);
     convbuf = (float *)realloc(convbuf, num_channels * num_samp * 4);
+
+
     timestamps.resize(num_samp);
     ttlEventWords.resize(num_samp);
+    
+    //clear the ttl event
+    //for (int i = 0; i < num_samp; i++) {
+    //    ttlEventWords.set(i, 0);
+    //}
 }
 
 int EphysSocket::getNumChannels() const
@@ -101,10 +108,13 @@ void  EphysSocket::tryToConnect()
     socket->shutdown();
     socket = new DatagramSocket();
     bool bound = socket->bindToPort(port);
+    int connection_status = -1;
     if (bound)
     {
         std::cout << "Socket bound to port " << port << std::endl;
-        connected = (socket->waitUntilReady(true, 500) == 1);
+        connection_status = socket->waitUntilReady(true, 500);
+        //connected = (socket->waitUntilReady(true, 500) == 1);
+        connected = (connection_status == 1);
     }
     else {
         std::cout << "Could not bind socket to port " << port << std::endl;
@@ -117,7 +127,7 @@ void  EphysSocket::tryToConnect()
 
     }
     else {
-        std::cout << "Socket failed to connect" << std::endl;
+        std::cout << "Socket failed to connect: " << connection_status << std::endl;
     }
 }
 
@@ -138,11 +148,25 @@ bool EphysSocket::stopAcquisition()
 
 bool EphysSocket::updateBuffer()
 {
-    int rc = socket->read(recvbuf, num_channels * num_samp * 2, true);
+
+
+
+    //recvbuf is two bype
+    int rc = socket->read(recvbuf, num_channels * num_samp * 2, true); //the data size of each datagram must match
+
+    if (rc > 0) {
+        std::cout << "Data:" << rc << std::endl;
+
+        for (int i = 0; i < num_samp; i++) {
+            std::cout << recvbuf[i] << " ";
+        }
+    }
+
 
     if (rc == -1)
     {
         CoreServices::sendStatusMessage("Ephys Socket: Data shape mismatch");
+        std::cout << "Error in socket read" << std::endl;
         return false;
     }
    
@@ -151,7 +175,8 @@ bool EphysSocket::updateBuffer()
         int k = 0;
         for (int i = 0; i < num_samp; i++) {
             for (int j = 0; j < num_channels; j++) {
-                convbuf[k++] = data_scale *  (float)(recvbuf[j*num_samp + i] - data_offset);
+                convbuf[k++] = data_scale *  (float)(recvbuf[j*num_samp + i] - data_offset); //convert the input data to proper values
+
             }
             timestamps.set(i, total_samples + i);
         }
@@ -165,15 +190,73 @@ bool EphysSocket::updateBuffer()
     }
 
     sourceBuffers[0]->addToBuffer(convbuf, 
-                                  timestamps.getRawDataPointer(), 
-                                  ttlEventWords.getRawDataPointer(), 
-                                  num_samp, 
-                                  1);
+                                  &timestamps.getReference(0), 
+                                  &ttlEventWords.getReference(0), 
+                                  num_samp);
+
+    //sourceBuffers[0]->addToBuffer(convbuf,
+    //    timestamps.getRawDataPointer(),
+    //    ttlEventWords.getRawDataPointer(),
+    //    num_samp,
+    //    1);
 
     total_samples += num_samp;
 
+
     return true;
 }
+
+
+//bool EphysSocket::updateBuffer()
+//{
+//
+//
+//
+//    //recvbuf is two bype
+//    int rc = socket->read(recvbuf, num_channels * num_samp * 2, true); //the data size of each datagram must match
+//
+//    if (rc > 0) {
+//        std::cout << "Data:" << rc << std::endl;
+//
+//        for (int i = 0; i < num_samp; i++) {
+//            std::cout << recvbuf[i] << " ";
+//        }
+//    }
+//
+//
+//    if (rc == -1)
+//    {
+//        CoreServices::sendStatusMessage("Ephys Socket: Data shape mismatch");
+//        std::cout << "Error in socket read" << std::endl;
+//        return false;
+//    }
+//
+//    for (int samp = 0; samp < num_samp; samp++) {
+//        for (int j = 0; j < num_channels; j++) {
+//            // data in one channel, then data in another channel
+//            convbuf[j] = data_scale * (float)(recvbuf[j * num_samp + samp] - data_offset); //convert the input data to proper values
+//
+//        }
+//
+//        timestamps.set(0, total_samples); //only has 1 element
+//        ttlEventWords.set(0, 0);
+//        std::cout << total_samples << " ";
+//
+//
+//        sourceBuffers[0]->addToBuffer(convbuf,
+//            &timestamps.getReference(0),
+//            &ttlEventWords.getReference(0),
+//            1);
+//
+//
+//        total_samples += 1;
+//
+//    }
+//
+//    return true;
+//}
+
+
 
 void EphysSocket::timerCallback()
 {

@@ -58,6 +58,7 @@ namespace EphysSocketNode
 
         uint16_t *recvbuf;
         float *convbuf;
+        //float convbuf[512];
 
         JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(EphysSocket);
     };
