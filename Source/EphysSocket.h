@@ -2,6 +2,7 @@
 #define __EPHYSSOCKETH__
 
 #include <DataThreadHeaders.h>
+#include "EphysSocketEditor.h"
 
 const int DEFAULT_PORT = 9001;
 const float DEFAULT_SAMPLE_RATE = 30000.0f;
@@ -58,7 +59,7 @@ namespace EphysSocketNode
 
         uint16_t *recvbuf;
         float *convbuf;
-        //float convbuf[512];
+        EphysSocketEditor* editor;
 
         JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(EphysSocket);
     };

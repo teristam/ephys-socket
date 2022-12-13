@@ -30,8 +30,10 @@ EphysSocket::EphysSocket(SourceNode* sn) : DataThread(sn),
 }
 
 GenericEditor* EphysSocket::createEditor(SourceNode* sn)
-{
-    return new EphysSocketEditor(sn, this);
+{   
+    editor = new EphysSocketEditor(sn, this);
+    return editor;
+
 }
 
 
@@ -52,10 +54,6 @@ void EphysSocket::resizeChanSamp()
     timestamps.resize(num_samp);
     ttlEventWords.resize(num_samp);
     
-    //clear the ttl event
-    //for (int i = 0; i < num_samp; i++) {
-    //    ttlEventWords.set(i, 0);
-    //}
 }
 
 int EphysSocket::getNumChannels() const
@@ -100,6 +98,7 @@ bool EphysSocket::startAcquisition()
     //startTimer(5000);
 
     startThread();
+
     return true;
 }
 
@@ -129,6 +128,7 @@ void  EphysSocket::tryToConnect()
     else {
         std::cout << "Socket failed to connect: " << connection_status << std::endl;
     }
+
 }
 
 bool EphysSocket::stopAcquisition()
@@ -194,67 +194,10 @@ bool EphysSocket::updateBuffer()
                                   &ttlEventWords.getReference(0), 
                                   num_samp);
 
-    //sourceBuffers[0]->addToBuffer(convbuf,
-    //    timestamps.getRawDataPointer(),
-    //    ttlEventWords.getRawDataPointer(),
-    //    num_samp,
-    //    1);
-
     total_samples += num_samp;
-
 
     return true;
 }
-
-
-//bool EphysSocket::updateBuffer()
-//{
-//
-//
-//
-//    //recvbuf is two bype
-//    int rc = socket->read(recvbuf, num_channels * num_samp * 2, true); //the data size of each datagram must match
-//
-//    if (rc > 0) {
-//        std::cout << "Data:" << rc << std::endl;
-//
-//        for (int i = 0; i < num_samp; i++) {
-//            std::cout << recvbuf[i] << " ";
-//        }
-//    }
-//
-//
-//    if (rc == -1)
-//    {
-//        CoreServices::sendStatusMessage("Ephys Socket: Data shape mismatch");
-//        std::cout << "Error in socket read" << std::endl;
-//        return false;
-//    }
-//
-//    for (int samp = 0; samp < num_samp; samp++) {
-//        for (int j = 0; j < num_channels; j++) {
-//            // data in one channel, then data in another channel
-//            convbuf[j] = data_scale * (float)(recvbuf[j * num_samp + samp] - data_offset); //convert the input data to proper values
-//
-//        }
-//
-//        timestamps.set(0, total_samples); //only has 1 element
-//        ttlEventWords.set(0, 0);
-//        std::cout << total_samples << " ";
-//
-//
-//        sourceBuffers[0]->addToBuffer(convbuf,
-//            &timestamps.getReference(0),
-//            &ttlEventWords.getReference(0),
-//            1);
-//
-//
-//        total_samples += 1;
-//
-//    }
-//
-//    return true;
-//}
 
 
 

@@ -37,6 +37,8 @@ namespace EphysSocketNode
         /** Called when label is changed */
         void labelTextChanged(Label* label);
 
+        void updateSignalChain(); //update the signal chain when connection is completed
+
     private:
 
         // Button that tried to connect to client

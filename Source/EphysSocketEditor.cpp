@@ -205,7 +205,7 @@ void EphysSocketEditor::labelTextChanged(Label* label)
     {
         int offset = offsetInput->getText().getIntValue();
 
-        if (offset > 0 && offset < 65536)
+        if (offset >= 0 && offset < 65536)
         {
             node->data_offset = offset;
         }
@@ -213,6 +213,11 @@ void EphysSocketEditor::labelTextChanged(Label* label)
             offsetInput->setText(String(node->data_offset), dontSendNotification);
         }
     }
+}
+
+void EphysSocketEditor::updateSignalChain()
+{
+    CoreServices::updateSignalChain(this);
 }
 
 void EphysSocketEditor::startAcquisition()
@@ -255,6 +260,8 @@ void EphysSocketEditor::buttonEvent(Button* button)
     {
         node->port = portInput->getText().getIntValue();
         node->tryToConnect();
+        CoreServices::updateSignalChain(this); //TODO: current needs to press the connect button twice to update the whole signal chain
+
     }
   
 }
